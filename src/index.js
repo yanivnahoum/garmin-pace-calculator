@@ -48,31 +48,36 @@ function runAvg() {
     const activeLaps = $('#intervals-table > table > tbody > tr.active');
 
     const parseFloat2Decimals = val => parseFloat(parseFloat(val).toFixed(2));
+    const countColons = str => str.split(":").length - 1;
+    const hasHours = str => countColons(str) == 2;
+    const parseTime = val => hasHours(val) ? duration.parse(val, "H:m:s") : duration.parse(val + '00', 'm:ss.SSS');
 
     const data = [];
     activeLaps.each((i, row) => {
         let cells = [...row.cells];
         cells = cells.map(val => val.innerText)
             .map((val, index) => {
-                if (isTimeColumn(index)) return duration.parse(val + '00', 'm:ss.SSS');
+                if (isTimeColumn(index)) return parseTime(val);
                 if (isDistanceColumn(index)) return parseFloat2Decimals(val);
                 return val;
             });
         data.push(cells);
     });
 
+    const timeFormat = "H:mm:ss.SS";
+    const paceFormat = "m:ss.S"
     const avgTimeReducer = (accumulator, currentValue, i, a) => accumulator + (currentValue[timeColumnIndex] / a.length);
-    const avgTime = duration.format(Math.round(Math.floor(data.reduce(avgTimeReducer, 0)) / 100) * 100, 'm:ss.S').slice(0, -2);
+    const avgTime = duration.format(Math.round(Math.floor(data.reduce(avgTimeReducer, 0)) / 100) * 100, timeFormat).slice(0, -2);
 
     const comTimeReducer = (accumulator, currentValue) => accumulator + currentValue[timeColumnIndex];
     const comTimeMillis = data.reduce(comTimeReducer, 0);
-    const comTime = duration.format(comTimeMillis, 'm:ss.S').slice(0, -2);
+    const comTime = duration.format(comTimeMillis, timeFormat).slice(0, -2);
 
 
     const totDistReducer = (accumulator, currentValue) => accumulator + currentValue[distanceColumnIndex];
     const totDist = parseFloat2Decimals(data.reduce(totDistReducer, 0));
 
-    const avgPace = duration.format(Math.round(comTimeMillis / totDist), 'm:ss.S').slice(0, -2);
+    const avgPace = duration.format(Math.round(comTimeMillis / totDist), paceFormat).slice(0, -2);
 
     const tableFooter = $('#intervals-table > table > tfoot');
     tableFooter.find('#interval-summary').remove();
