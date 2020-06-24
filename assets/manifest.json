@@ -1,6 +1,6 @@
 {
   "name": "Garmin Connect Pace Calculator",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "manifest_version": 2,
   "description": "Calculate pace averages of your splits in Garmin Connect activities!",
   "author": "Yaniv Nahoum & Noam Neeman",
