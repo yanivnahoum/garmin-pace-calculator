@@ -1,13 +1,23 @@
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 const ZipPlugin = require('zip-webpack-plugin');
 
+
 module.exports = {
+    mode: 'production',
+    // devtool: 'inline-source-map',
     plugins: [
-        new CopyWebpackPlugin([
-            { from: 'assets' }
-        ]),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: 'assets',
+                    globOptions: {
+                        ignore: ['**/.DS_Store'],
+                    },
+                }
+            ],
+        }),
         new ZipPlugin({
             filename: 'garmin-splits-calculator.zip',
         }),
-    ]
+    ],
 };

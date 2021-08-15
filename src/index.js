@@ -38,26 +38,34 @@ function initColumnIndexes() {
                 break;
         }
     });
-    if (timeColumnIndex == undefined) console.error("Couldn't find the Time column!");
-    if (distanceColumnIndex == undefined) console.error("Couldn't find the Distance column!");
+    if (timeColumnIndex == null) console.error("Couldn't find the Time column!");
+    if (distanceColumnIndex == null) console.error("Couldn't find the Distance column!");
 }
 
 function runAvg() {
-    const activeLaps = intervalsTable().find('> tbody').find('> tr.active, > tr[class*="IntervalsTable_selected__"]');
+    const activeLaps = intervalsTable().find('> tbody').find('> tr.active, > tr[class*="IntervalsTable_selected__"]:not(:has(> td > i))');
 
     const parseFloat2Decimals = val => parseFloat(parseFloat(val).toFixed(2));
     const countColons = str => str.split(":").length - 1;
-    const hasHours = str => countColons(str) == 2;
-    const parseTime = val => hasHours(val) ? duration.parse(val, "H:m:s") : duration.parse(val + '00', 'm:ss.SSS');
+    const hasHours = str => countColons(str) === 2;
+    const parseTime = val => hasHours(val) ? duration.parse(val, "H:m:s") : duration.parse(`${val}00`, 'm:ss.SSS');
 
     const data = [];
     activeLaps.each((i, row) => {
         let cells = [...row.cells];
+        const isSubLap = $(row).find('> tr').length > 0;
+        if (isSubLap) {
+            cells = ['', ...cells]
+        }
         cells = cells.map(val => val.innerText)
             .map((val, index) => {
-                if (isTimeColumn(index)) return parseTime(val);
-                if (isDistanceColumn(index)) return parseFloat2Decimals(val);
-                return val;
+                let computedVal = val;
+                if (isTimeColumn(index)) {
+                    computedVal = parseTime(val);
+                } else if (isDistanceColumn(index)) {
+                    computedVal = parseFloat2Decimals(val);
+                }
+                return computedVal;
             });
         data.push(cells);
     });
