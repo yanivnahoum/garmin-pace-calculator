@@ -136,6 +136,10 @@ dist/
 tmp/
 temp/
 
+### Intellij ###
+.idea
+*.iml
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json

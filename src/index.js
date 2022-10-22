@@ -15,7 +15,8 @@ const observe = () =>  {
 }
 observe();
 
-let timeColumnIndex, distanceColumnIndex;
+let timeColumnIndex, distanceColumnIndex, lapPowerColumnIndex;
+let lapPowerColumnExists = false;
 function setup() {
     initColumnIndexes();
     intervalsTable().find("> tbody").on('click', () => setTimeout(runAvg, 0));
@@ -34,12 +35,17 @@ function initColumnIndexes() {
             case "Distance":
                 distanceColumnIndex = index;
                 break;
+            case "Lap Power":
+                lapPowerColumnIndex = index;
+                lapPowerColumnExists = true;
+                break;
             default:
                 break;
         }
     });
     if (timeColumnIndex == null) console.error("Couldn't find the Time column!");
     if (distanceColumnIndex == null) console.error("Couldn't find the Distance column!");
+    if (lapPowerColumnExists) console.info("Found lap power column!");
 }
 
 function runAvg() {
@@ -72,25 +78,33 @@ function runAvg() {
 
     const timeFormat = "H:mm:ss.SS";
     const paceFormat = "m:ss.S"
-    const avgTimeReducer = (accumulator, currentValue, i, a) => accumulator + (currentValue[timeColumnIndex] / a.length);
-    const avgTime = duration.format(Math.round(Math.floor(data.reduce(avgTimeReducer, 0)) / 100) * 100, timeFormat).slice(0, -2);
+    const averageTimeReducer = (accumulator, currentValue, i, a) => accumulator + (currentValue[timeColumnIndex] / a.length);
+    const averageTime = duration.format(Math.round(Math.floor(data.reduce(averageTimeReducer, 0)) / 100) * 100, timeFormat).slice(0, -2);
 
-    const comTimeReducer = (accumulator, currentValue) => accumulator + currentValue[timeColumnIndex];
-    const comTimeMillis = data.reduce(comTimeReducer, 0);
-    const comTime = duration.format(comTimeMillis, timeFormat).slice(0, -2);
+    const cumulativeTimeReducer = (accumulator, currentValue) => accumulator + currentValue[timeColumnIndex];
+    const cumulativeTimeMillis = data.reduce(cumulativeTimeReducer, 0);
+    const cumulativeTime = duration.format(cumulativeTimeMillis, timeFormat).slice(0, -2);
 
+    const totalDistanceReducer = (accumulator, currentValue) => accumulator + currentValue[distanceColumnIndex];
+    const totalDistance = parseFloat2Decimals(data.reduce(totalDistanceReducer, 0));
 
-    const totDistReducer = (accumulator, currentValue) => accumulator + currentValue[distanceColumnIndex];
-    const totDist = parseFloat2Decimals(data.reduce(totDistReducer, 0));
+    const averagePace = duration.format(Math.round(cumulativeTimeMillis / totalDistance), paceFormat).slice(0, -2);
 
-    const avgPace = duration.format(Math.round(comTimeMillis / totDist), paceFormat).slice(0, -2);
+    const lapPowerReducer = (accumulator, currentValue) => accumulator + currentValue[timeColumnIndex] * currentValue[lapPowerColumnIndex];
+    const averagePower = lapPowerColumnExists ? parseFloat2Decimals(data.reduce(lapPowerReducer, 0) / cumulativeTimeMillis) : "N/A"
 
     const tableFooter = intervalsTable().find('> tfoot');
     tableFooter.find('#interval-summary').remove();
 
     let td = '<td colspan="4">Select some laps!</td><td colspan="100%"></td>';
     if (activeLaps.length) {
-        td = `<td colspan="3" style="padding: 8px; text-align: left;">Selected Summary</td><td><div style="font-size:9px">Avg Time</div><div>${avgTime}</div></td><td></td><td><div style="font-size:9px">Total Time</div><div>${comTime}</div></td><td><div style="font-size:9px">Total Dist</div><div>${totDist}</div></td><td><div style="font-size:9px">Avg Pace</div><div>${avgPace}</div></td><td colspan="100%"></td>`;
+        td = `<td colspan="4" style="padding: 8px; text-align: left;">Selected Summary</td>
+        <td style="padding-right: 40px;"><div style="font-size:9px">Avg Time</div><div>${averageTime}</div></td>
+        <td style="padding-right: 40px;"><div style="font-size:9px">Total Time</div><div>${cumulativeTime}</div></td>
+        <td style="padding-right: 40px;"><div style="font-size:9px">Total Dist</div><div>${totalDistance}</div></td>
+        <td style="padding-right: 40px;"><div style="font-size:9px">Avg Pace</div><div>${averagePace}</div></td>
+        <td><div style="font-size:9px">Avg Power</div><div>${averagePower}</div></td>
+        <td colspan="100%"></td>`;
     }
 
     tableFooter.append(`<tr id="interval-summary" style="background: lightblue">${td}</tr>`);
