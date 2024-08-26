@@ -3,15 +3,16 @@
   "version": "0.0.1",
   "description": "A Chrome extension for calculating splits on Garmin Connect",
   "private": true,
-  "scripts": {
-    "build": "webpack --env=production",
-    "build:dev": "webpack"
-  },
   "author": "Yaniv Nahoum",
   "license": "ISC",
   "dependencies": {
     "duration-pattern": "^1.0.1",
     "jquery": "^3.7.1"
+  },
+  "scripts": {
+    "build": "webpack --env=production",
+    "build:dev": "webpack",
+    "watch": "webpack --watch"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.30",

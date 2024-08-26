@@ -5,7 +5,7 @@ const path = require('path');
 module.exports = (env) => {
 	return {
 		mode: env?.production ? 'production' : 'development',
-		devtool: env?.production ? false : 'inline-source-map',
+		devtool: env?.production ? false : 'source-map',
 		entry: {
 			main: './src/main.ts',
 		},
@@ -31,12 +31,8 @@ module.exports = (env) => {
 				},
 				{
 					test: /\.s[ac]ss$/i,
-					use: [
-					  "style-loader",
-					  "css-loader",
-					  "sass-loader",
-					],
-				  },
+					use: ['style-loader', 'css-loader', 'sass-loader'],
+				},
 			],
 		},
 		plugins: [
@@ -55,5 +51,8 @@ module.exports = (env) => {
 				filename: 'garmin-splits-calculator.zip',
 			}),
 		],
+		watchOptions: {
+			ignored: '**/node_modules',
+		},
 	};
 };

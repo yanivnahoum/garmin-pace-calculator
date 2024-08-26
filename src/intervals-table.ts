@@ -1,31 +1,18 @@
 import duration from 'duration-pattern';
 import $ from 'jquery';
 import { parseFloat2Decimals, parseTime } from './utils';
-import { paceFormat, summaryLabelsMap, timeFormat } from './constants';
 
-export const initialState: {
-	table?: JQuery<HTMLTableElement>;
-	columnIndexes: {
-		Time?: number;
-		Distance?: number;
-		'Lap Power'?: number;
-	};
-	lapPowerColumnExists: boolean;
-} = {
-	table: undefined,
-	columnIndexes: {
-		Time: undefined,
-		Distance: undefined,
-		'Lap Power': undefined,
-	},
-	lapPowerColumnExists: false,
-};
+type ComputedIntervalValues = { time?: number; distance?: number; lapPower?: number };
 
-let { table, columnIndexes, lapPowerColumnExists } = initialState;
+const TIME_FORMAT = 'H:mm:ss.SS';
+const PACE_FORMAT = 'm:ss.S';
 
 function getIntervalsTable(): JQuery<HTMLTableElement> {
 	return $('#tab-splits table');
 }
+
+let table: JQuery<HTMLTableElement> | undefined;
+let columnIndexes: { [key: string]: number } = {};
 
 function getData(): {
 	activeLapsLength?: number;
@@ -35,37 +22,27 @@ function getData(): {
 	averagePace?: number;
 	averagePower?: number | string;
 } {
+	console.log('Pace Calculator : getData');
 	const { Time: timeColumnIndex, Distance: distanceColumnIndex, 'Lap Power': lapPowerColumnIndex } = columnIndexes;
 
-	if (!table || !timeColumnIndex || !distanceColumnIndex || !lapPowerColumnIndex) return {};
+	if (!table || !timeColumnIndex || !distanceColumnIndex) return {};
 
-	const activeLaps: JQuery<HTMLTableRowElement> = table.find(
-		'> tbody > tr.active, > tr[class*="IntervalsTable_selected__"]:not(:has(> td > i))',
-	) as JQuery<HTMLTableRowElement>;
+	const activeLaps = $("tr[class*='IntervalsTable_selected']:not(:has(> td > i)") as JQuery<HTMLTableRowElement>;
 
-	const data: number[][] = [];
+	const data: ComputedIntervalValues[] = [];
 
 	activeLaps.each((_, row) => {
 		const cells = [...row.cells];
 
 		if ($(row).find('> tr').length > 0) {
-			cells.push($('<td></td>')[0] as HTMLTableCellElement);
+			cells.push(new HTMLTableCellElement());
 		}
 
-		const cellsData = cells.reduce((result: number[], cell: HTMLTableCellElement, index: number) => {
-			const val = cell.innerText;
-			if (!val) return result;
-
-			let computedVal: number = Number(val);
-
-			if (index === columnIndexes['Time']) {
-				computedVal = parseTime(val);
-			} else if (index === columnIndexes['Distance']) {
-				computedVal = parseFloat2Decimals(val);
-			}
-			result.push(computedVal);
-			return result;
-		}, []);
+		const cellsData: ComputedIntervalValues = {
+			time: parseTime(cells[timeColumnIndex]?.innerText),
+			distance: parseFloat2Decimals(Number(cells[distanceColumnIndex]?.innerText)),
+			lapPower: lapPowerColumnIndex ? parseFloat2Decimals(Number(cells[lapPowerColumnIndex]?.innerText)) : undefined,
+		};
 
 		data.push(cellsData);
 	});
@@ -75,41 +52,44 @@ function getData(): {
 			Math.round(
 				Math.floor(
 					data.reduce((accumulator, currentValue, _, a) => {
-						accumulator += currentValue[timeColumnIndex] / a.length;
+						if (!currentValue.time) return accumulator;
+						accumulator += currentValue.time / a.length;
 						return accumulator;
 					}, 0),
 				) / 100,
 			) * 100,
-			timeFormat,
+			TIME_FORMAT,
 		)
 		.slice(0, -2);
 
 	const cumulativeTimeMillis = data.reduce((accumulator, currentValue) => {
-		accumulator += currentValue[timeColumnIndex];
+		if (!currentValue.time) return accumulator;
+		accumulator += currentValue.time;
 		return accumulator;
 	}, 0);
 
-	const cumulativeTime = duration.format(cumulativeTimeMillis, timeFormat).slice(0, -2);
+	const cumulativeTime = duration.format(cumulativeTimeMillis, TIME_FORMAT).slice(0, -2);
 
 	const calculatedDistance = data.reduce((accumulator, currentValue) => {
-		accumulator += currentValue[distanceColumnIndex];
+		if (!currentValue.distance) return accumulator;
+		accumulator += currentValue.distance;
 		return accumulator;
 	}, 0);
 
-	const totalDistance = parseFloat2Decimals(calculatedDistance);
+	const totalDistance = parseFloat2Decimals(calculatedDistance) ?? 1;
 
-	const averagePace = duration.format(Math.round(cumulativeTimeMillis / totalDistance), paceFormat).slice(0, -2);
+	const averagePace = duration.format(Math.round(cumulativeTimeMillis / totalDistance), PACE_FORMAT).slice(0, -2);
 
-	const averagePower = lapPowerColumnExists
-		? parseFloat2Decimals(
-				data.reduce((accumulator, currentValue) => {
-					accumulator += currentValue[timeColumnIndex] * currentValue[lapPowerColumnIndex];
-					return accumulator;
-				}, 0) / cumulativeTimeMillis,
-			)
-		: 'N/A';
+	const calculatedAveragePower =
+		data.reduce((accumulator, currentValue) => {
+			if (!currentValue.lapPower || !currentValue.time) return accumulator;
+			accumulator += currentValue.time * currentValue.lapPower;
+			return accumulator;
+		}, 0) / cumulativeTimeMillis;
 
-	return {
+	const averagePower = calculatedAveragePower ? calculatedAveragePower.toFixed(2) : 'N/A';
+
+	const result = {
 		activeLapsLength: activeLaps.length,
 		averageTime,
 		cumulativeTime,
@@ -117,66 +97,84 @@ function getData(): {
 		averagePace,
 		averagePower,
 	};
+
+	return result;
 }
 
-function showSummary(values, activeLapsCount) {
-	console.info('Pace Calculator : showSummary');
+function showSummary() {
+	console.log('Pace Calculator : showSummary');
 	if (!table) return;
+
+	const { activeLapsLength, ...values } = getData();
 
 	const tableFooter = table.find('> tfoot');
 	tableFooter.find('#interval-summary').remove();
 
-	const summaryCellContent = activeLapsCount ? 'Selected Summary' : 'Select some laps!';
-	const summaryRow = $(`<tr id="interval-summary"><td colspan="4">${summaryCellContent}</td></tr>`);
+	const summaryRow = $(`<tr id="interval-summary"></tr>`);
 
-	if (!activeLapsCount) {
+	const generateEmptyCell = () => $('<td class="summary-value"></td>');
+
+	const summaryTitleCell = $(`<td class="selected-summary-title">${activeLapsLength ? 'Selected Summary' : 'Select&nbsp;some laps!'}</td>`);
+
+	if (!activeLapsLength) {
+		summaryRow.append(generateEmptyCell());
+		summaryRow.append(summaryTitleCell);
+		summaryRow.append($('<td colspan="100%"></td>'));
 		tableFooter.append(summaryRow);
 		return;
 	}
 
-	Object.entries(values).forEach(([key, value]) => {
-		const dataCell = $(`<td class="summary-value"><div class="summary-label">${summaryLabelsMap[key]}</div><div>${value}</div></td>`);
-		summaryRow.append(dataCell);
-	});
+	const sortedColumns = [...Object.entries(columnIndexes)].sort(([_a, a_value], [_b, b_value]) => a_value - b_value);
 
-	summaryRow.append($('<tr><td colspan="100%"></td><tr>'));
+	sortedColumns.forEach(([columnName, _]) => {
+		switch (columnName.trim()) {
+			case 'Interval':
+				summaryRow.append(summaryTitleCell);
+				break;
+			case 'Time':
+				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Time</span><br />${values.averageTime}</td>`));
+				break;
+			case 'Cumulative Time':
+				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Total Time</span><br />${values.cumulativeTime}</td>`));
+				break;
+			case 'Distance':
+				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Total Distance</span><br />${values.totalDistance}</td>`));
+				break;
+			case 'Avg Pace':
+				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Pace</span><br />${values.averagePace}</td>`));
+				break;
+			case 'Lap Power':
+				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Power</span><br />${values.averagePower}</td>`));
+				break;
+			default:
+				summaryRow.append(generateEmptyCell());
+				break;
+		}
+	});
 
 	tableFooter.append(summaryRow);
 	return;
 }
 
-function runAvg() {
-	console.info('Pace Calculator : runAvg');
-	const { activeLapsLength, ...values } = getData();
-	showSummary(values, activeLapsLength);
-}
-
 function initSummaryReport() {
-	console.info('Pace Calculator : initSummaryReport');
+	console.log('Pace Calculator : initSummaryReport');
 	// reset
-	table = initialState.table;
-	columnIndexes = initialState.columnIndexes;
+	table = undefined;
+	columnIndexes = {};
 
 	// initialize
 	table = getIntervalsTable();
 
 	if (!table || !table.length) return;
 
-	table.find('> thead > tr > th').each((index, th) => {
-		const columnName = $(th).text().trim() || $(th).find('span').text().trim();
-		columnIndexes[columnName] = index;
-		if (columnName === 'Lap Power') {
-			lapPowerColumnExists = true;
-		}
-	});
-	// validate found columns
-	Object.entries(columnIndexes).forEach(([key, value]) => {
-		if (value === undefined) {
-			console.error(`Couldn't find the ${key} column!`);
-		}
+	const intervalTableHeaders = $("th[class^='IntervalsTable_headerItem'] > span");
+
+	intervalTableHeaders.each((idx, headerSpanElement) => {
+		const columnName = headerSpanElement.outerText?.trim() || 'N/A';
+		columnIndexes[columnName] = idx;
 	});
 
-	table.find('> tbody').on('click', () => setTimeout(runAvg, 0));
+	table.find('> tbody').on('click', () => setTimeout(showSummary, 0));
 }
 
 export { getIntervalsTable, initSummaryReport };
