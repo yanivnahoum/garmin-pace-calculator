@@ -1,0 +1,23 @@
+#tab-splits {
+	table {
+		#interval-summary {
+			background: lightblue;
+
+			td {
+				text-align: center;
+				white-space: nowrap;
+				line-height: 20px;
+				vertical-align: middle;
+				padding: 8px;
+
+				&.selected-summary-title{
+					white-space: break-spaces;
+				}
+
+				.summary-label {
+					font-size: 9px;
+				}
+			}
+		}
+	}
+}
