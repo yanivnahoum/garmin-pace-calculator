@@ -27,21 +27,23 @@ function getData(): {
 
 	if (!table || !timeColumnIndex || !distanceColumnIndex) return {};
 
-	const activeLaps = $("tr[class*='IntervalsTable_selected']:not(:has(> td > i)") as JQuery<HTMLTableRowElement>;
+	const activeLaps = isIntervalTable(table) ? table.find('tr[class*="Table_selected"]:not(:has(> td > svg)') as JQuery<HTMLTableRowElement>
+		: table.find('tr.active[class*="SortableTable_tableRow"]') as JQuery<HTMLTableRowElement>;
 
 	const data: ComputedIntervalValues[] = [];
 
 	activeLaps.each((_, row) => {
 		const cells = [...row.cells];
 
-		if ($(row).find('> tr').length > 0) {
-			cells.push(new HTMLTableCellElement());
+		const isSubLap = $(row).find('> tr').length > 0;
+		if (isSubLap) {
+			cells.unshift(document.createElement('td'));
 		}
 
 		const cellsData: ComputedIntervalValues = {
 			time: parseTime(cells[timeColumnIndex]?.innerText),
-			distance: parseFloat2Decimals(Number(cells[distanceColumnIndex]?.innerText)),
-			lapPower: lapPowerColumnIndex ? parseFloat2Decimals(Number(cells[lapPowerColumnIndex]?.innerText)) : undefined,
+			distance: Number(cells[distanceColumnIndex]?.innerText),
+			lapPower: lapPowerColumnIndex ? Number(cells[lapPowerColumnIndex]?.innerText) : undefined,
 		};
 
 		data.push(cellsData);
@@ -75,8 +77,7 @@ function getData(): {
 		accumulator += currentValue.distance;
 		return accumulator;
 	}, 0);
-
-	const totalDistance = parseFloat2Decimals(calculatedDistance) ?? 1;
+	const totalDistance = parseFloat2Decimals(calculatedDistance);
 
 	const averagePace = duration.format(Math.round(cumulativeTimeMillis / totalDistance), PACE_FORMAT).slice(0, -2);
 
@@ -89,7 +90,7 @@ function getData(): {
 
 	const averagePower = calculatedAveragePower ? calculatedAveragePower.toFixed(2) : 'N/A';
 
-	const result = {
+	return {
 		activeLapsLength: activeLaps.length,
 		averageTime,
 		cumulativeTime,
@@ -97,8 +98,13 @@ function getData(): {
 		averagePace,
 		averagePower,
 	};
+}
 
-	return result;
+// Distinguish between interval tables and plain lap tables (class starts with "SortableTable_table")
+function isIntervalTable(table: JQuery<HTMLTableElement>): boolean {
+	const tableClass = table.attr('class');
+	console.log(`Pace Calculator: #isIntervalTable - found table with id=${tableClass}`);
+	return tableClass?.startsWith('IntervalsTable_table') ?? false;
 }
 
 function showSummary() {
@@ -167,7 +173,7 @@ function initSummaryReport() {
 
 	if (!table || !table.length) return;
 
-	const intervalTableHeaders = $("th[class^='IntervalsTable_headerItem'] > span");
+	const intervalTableHeaders = $('th > span');
 
 	intervalTableHeaders.each((idx, headerSpanElement) => {
 		const columnName = headerSpanElement.outerText?.trim() || 'N/A';

@@ -2,6 +2,9 @@
 Go to any Garmin Connect activity, select the Laps tab and simply select the laps you're interested. A new table footer will appear with the average time per lap, along with total time and distance,  average pace, and average power (if available) for selected laps.
 
 ## Changelog:
+
+* 1.0.0 - Upgraded dependencies, switched to Typescript, adjusted selectors according to latest
+  changes in Garmin classes.
 * 0.6.0 - Added Stryd lap power metric to the summary, if available.
 * 0.5.0  - Again - adjustments required due to changes in Garmin "steps" workout. 
   Upgraded all dependencies, migrated to manifest v3.
