@@ -3,6 +3,7 @@ Go to any Garmin Connect activity, select the Laps tab and simply select the lap
 
 ## Changelog:
 
+* 1.1.0 - Upgraded dependencies, fixed bug in Laps table.
 * 1.0.0 - Upgraded dependencies, switched to Typescript, adjusted selectors according to latest
   changes in Garmin classes.
 * 0.6.0 - Added Stryd lap power metric to the summary, if available.

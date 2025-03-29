@@ -159,7 +159,6 @@ function showSummary() {
 	});
 
 	tableFooter.append(summaryRow);
-	return;
 }
 
 function initSummaryReport() {
@@ -171,9 +170,11 @@ function initSummaryReport() {
 	// initialize
 	table = getIntervalsTable();
 
-	if (!table || !table.length) return;
+	if (!table?.length) return;
 
-	const intervalTableHeaders = $('th > span');
+	const headersFromIntervals = 'th > span:first-child';
+	const headersFromLaps = 'th > div > span:first-child';
+	const intervalTableHeaders = table.find(`${headersFromIntervals}, ${headersFromLaps}`);
 
 	intervalTableHeaders.each((idx, headerSpanElement) => {
 		const columnName = headerSpanElement.outerText?.trim() || 'N/A';
