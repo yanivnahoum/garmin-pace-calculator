@@ -8,7 +8,7 @@ const TIME_FORMAT = 'H:mm:ss.SS';
 const PACE_FORMAT = 'm:ss.S';
 
 function getIntervalsTable(): JQuery<HTMLTableElement> {
-	return $('#tab-splits table');
+	return $('table[class^="IntervalsTable_table"], #tab-splits table').first() as JQuery<HTMLTableElement>;
 }
 
 let table: JQuery<HTMLTableElement> | undefined;

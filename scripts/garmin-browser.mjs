@@ -13,6 +13,7 @@ const FIXTURE_PATH = path.join(ROOT_DIR, 'tests', 'fixtures', 'intervals-table.h
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const DEBUGGING_PORT = 9222;
 const CDP_ENDPOINT = `http://127.0.0.1:${DEBUGGING_PORT}`;
+const INTERVALS_TABLE_SELECTOR = 'table[class^="IntervalsTable_table"], #tab-splits table';
 
 function launchChrome({ debugging = false, setup = false } = {}) {
     const args = [`--user-data-dir=${PROFILE_DIR}`, '--no-first-run', ACTIVITY_URL];
@@ -112,6 +113,55 @@ async function openIntervalsTab(page) {
     throw new Error('Could not find the Intervals tab below the activity charts.');
 }
 
+function intervalsTable(page) {
+    return page.locator(INTERVALS_TABLE_SELECTOR).first();
+}
+
+async function assertSummary(page, rows, expectedValues) {
+    const summary = page.locator('#interval-summary');
+    await summary.waitFor({ state: 'visible', timeout: 10_000 });
+    try {
+        await page.waitForFunction(
+            (expected) => {
+                const summaryElement = document.querySelector('#interval-summary');
+                const text = summaryElement instanceof HTMLElement ? summaryElement.innerText.replace(/\s+/g, ' ').trim() : undefined;
+                return expected.every((value) => text?.includes(value));
+            },
+            expectedValues,
+            { timeout: 10_000 },
+        );
+    } catch {
+        const observedText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
+        const rowClasses = await rows.evaluateAll((elements) => elements.map((element) => element.className));
+        throw new Error(`Expected ${JSON.stringify(expectedValues)}, received "${observedText}" with rows ${JSON.stringify(rowClasses)}`);
+    }
+    const summaryText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
+    if ((await page.locator('#interval-summary').count()) !== 1) {
+        throw new Error('Expected exactly one summary footer row.');
+    }
+    return summaryText;
+}
+
+function parseDuration(value) {
+    const parts = value.split(':').map(Number);
+    return parts.reduce((seconds, part) => seconds * 60 + part, 0);
+}
+
+function parseSummaryValue(value) {
+    return value.split(/\s+/).at(-1);
+}
+
+async function readSummary(page) {
+    return page.locator('#interval-summary td').evaluateAll((cells) =>
+        Object.fromEntries(
+            cells.flatMap((cell) => {
+                const label = cell.querySelector('.summary-label')?.textContent?.trim();
+                return label ? [[label, cell.textContent?.replace(label, '').trim()]] : [];
+            }),
+        ),
+    );
+}
+
 async function validateFixture() {
     const browser = await connectToChrome();
     const context = browser.contexts()[0];
@@ -126,40 +176,16 @@ async function validateFixture() {
         );
         await page.goto(`${ACTIVITY_URL}?fixture=intervals`, { waitUntil: 'domcontentloaded' });
         await page.locator('html[data-garmin-pace-calculator="loaded"]').waitFor({ timeout: 10_000 });
-        const rows = page.locator('#tab-splits tbody > tr');
-        const summary = page.locator('#interval-summary');
-        const assertSummary = async (expectedValues) => {
-            await summary.waitFor({ state: 'visible', timeout: 10_000 });
-            try {
-                await page.waitForFunction(
-                    (expected) => {
-                        const summaryElement = document.querySelector('#interval-summary');
-                        const text = summaryElement instanceof HTMLElement ? summaryElement.innerText.replace(/\s+/g, ' ').trim() : undefined;
-                        return expected.every((value) => text?.includes(value));
-                    },
-                    expectedValues,
-                    { timeout: 10_000 },
-                );
-            } catch {
-                const observedText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
-                const rowClasses = await rows.evaluateAll((elements) => elements.map((element) => element.className));
-                throw new Error(`Expected ${JSON.stringify(expectedValues)}, received "${observedText}" with rows ${JSON.stringify(rowClasses)}`);
-            }
-            const summaryText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
-            if ((await page.locator('#interval-summary').count()) !== 1) {
-                throw new Error('Expected exactly one summary footer row.');
-            }
-            return summaryText;
-        };
+        const rows = intervalsTable(page).locator('tbody > tr');
 
         await rows.nth(0).click();
-        const singleSummary = await assertSummary(['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
+        const singleSummary = await assertSummary(page, rows, ['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
 
         await rows.nth(1).click();
-        const combinedSummary = await assertSummary(['Total Time 0:10:00.0', 'Total Distance 2', 'Avg Power 250.00']);
+        const combinedSummary = await assertSummary(page, rows, ['Total Time 0:10:00.0', 'Total Distance 2', 'Avg Power 250.00']);
 
         await rows.nth(0).click();
-        const deselectedSummary = await assertSummary(['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 300.00']);
+        const deselectedSummary = await assertSummary(page, rows, ['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 300.00']);
         const selectedRows = await rows.evaluateAll((elements) =>
             elements.map((element, index) => ({ index, selected: element.className.includes('IntervalsTable_selected') })).filter(({ selected }) => selected),
         );
@@ -191,17 +217,78 @@ async function diagnose() {
 
     try {
         await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+        await reloadExtension(context);
         page = await openActivity(context);
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
         if (!page.url().startsWith('https://connect.garmin.com/app/activity/')) {
             throw new Error(`Garmin authentication is required. Run npm run garmin:auth first. Current URL: ${page.url()}`);
         }
 
         await openIntervalsTab(page);
-        const intervalsTable = page.locator('#tab-splits table').first();
-        await intervalsTable.waitFor({ state: 'visible', timeout: 30_000 });
-        const firstInterval = intervalsTable.locator('tbody > tr').first();
-        await firstInterval.evaluate((element) => element.click());
-        await page.locator('#interval-summary').waitFor({ state: 'visible', timeout: 10_000 });
+        const table = intervalsTable(page);
+        await table.waitFor({ state: 'visible', timeout: 30_000 });
+        const headers = await table.locator('th').allTextContents();
+        const timeIndex = headers.findIndex((header) => header.trim() === 'Time');
+        const distanceIndex = headers.findIndex((header) => header.trim() === 'Distance');
+        const powerIndex = headers.findIndex((header) => ['Avg Power', 'Lap Power'].includes(header.trim()));
+        if (timeIndex < 0 || distanceIndex < 0) throw new Error('Live Intervals table is missing Time or Distance columns.');
+
+        const rows = table.locator('tbody > tr:not(:has(> td > svg))');
+        if ((await rows.count()) < 2) throw new Error('Live Intervals table does not contain two selectable rows.');
+        const rawRows = await rows.evaluateAll(
+            (elements, indexes) => indexes.map((index) => [...elements[index].cells].map((cell) => cell.innerText.trim())),
+            [0, 1],
+        );
+        const expectedRows = rawRows.map((cells) => ({
+            time: parseDuration(cells[timeIndex]),
+            distance: Number(cells[distanceIndex]),
+            power: powerIndex >= 0 ? Number(cells[powerIndex]) : undefined,
+        }));
+
+        const selectedRows = table.locator('tbody > tr[class*="IntervalsTable_selected"], tbody > tr[class*="Table_selected"]');
+        for (let index = (await selectedRows.count()) - 1; index >= 0; index -= 1) {
+            await selectedRows.nth(index).evaluate((element) => element.click());
+        }
+
+        await rows.nth(0).evaluate((element) => element.click());
+        await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.includes('Selected Summary'));
+        const singleSummary = await readSummary(page);
+
+        await rows.nth(1).evaluate((element) => element.click());
+        await page.waitForFunction(
+            (previousDistance) => !document.querySelector('#interval-summary')?.textContent?.includes(`Total Distance${previousDistance}`),
+            singleSummary['Total Distance'],
+        );
+        const combinedSummary = await readSummary(page);
+
+        await rows.nth(0).evaluate((element) => element.click());
+        await page.waitForFunction(
+            (previousDistance) => !document.querySelector('#interval-summary')?.textContent?.includes(`Total Distance${previousDistance}`),
+            combinedSummary['Total Distance'],
+        );
+        const deselectedSummary = await readSummary(page);
+
+        const assertClose = (label, actual, expected, tolerance = 0.01) => {
+            if (Math.abs(actual - expected) > tolerance) throw new Error(`${label}: expected ${expected}, received ${actual}`);
+        };
+        assertClose('Single total time', parseDuration(parseSummaryValue(singleSummary['Total Time'])), expectedRows[0].time, 0.11);
+        assertClose('Single distance', Number(parseSummaryValue(singleSummary['Total Distance'])), expectedRows[0].distance);
+        assertClose('Combined total time', parseDuration(parseSummaryValue(combinedSummary['Total Time'])), expectedRows[0].time + expectedRows[1].time, 0.11);
+        assertClose('Combined distance', Number(parseSummaryValue(combinedSummary['Total Distance'])), expectedRows[0].distance + expectedRows[1].distance);
+        assertClose('Deselected total time', parseDuration(parseSummaryValue(deselectedSummary['Total Time'])), expectedRows[1].time, 0.11);
+        assertClose('Deselected distance', Number(parseSummaryValue(deselectedSummary['Total Distance'])), expectedRows[1].distance);
+        if (expectedRows.every(({ power }) => Number.isFinite(power))) {
+            const weightedPower = (expectedRows[0].time * expectedRows[0].power + expectedRows[1].time * expectedRows[1].power) /
+                (expectedRows[0].time + expectedRows[1].time);
+            assertClose('Combined weighted power', Number(parseSummaryValue(combinedSummary['Avg Power'])), weightedPower);
+            assertClose('Deselected power', Number(parseSummaryValue(deselectedSummary['Avg Power'])), expectedRows[1].power);
+        }
+        const remainingSelected = await table.locator('tbody > tr[class*="IntervalsTable_selected"], tbody > tr[class*="Table_selected"]').count();
+        if (remainingSelected !== 1) throw new Error(`Expected one selected row after deselection, received ${remainingSelected}.`);
+
+        console.log(`Live single selection passed: ${JSON.stringify(singleSummary)}`);
+        console.log(`Live combined selection passed: ${JSON.stringify(combinedSummary)}`);
+        console.log(`Live deselection passed: ${JSON.stringify(deselectedSummary)}`);
 
         const diagnostic = await page.evaluate(() => ({
             url: location.href,
@@ -227,7 +314,7 @@ async function diagnose() {
         }));
 
         await writeFile(path.join(ARTIFACTS_DIR, 'diagnostic.json'), `${JSON.stringify(diagnostic, null, 2)}\n`);
-        await intervalsTable.screenshot({ path: path.join(ARTIFACTS_DIR, 'intervals-table.png') });
+        await intervalsTable(page).screenshot({ path: path.join(ARTIFACTS_DIR, 'intervals-table.png') }).catch(() => undefined);
         console.log(`Diagnostic artifacts written to ${path.relative(ROOT_DIR, ARTIFACTS_DIR)}`);
         console.log(JSON.stringify(diagnostic, null, 2));
     } finally {
