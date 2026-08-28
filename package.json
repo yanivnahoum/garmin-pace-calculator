@@ -31,6 +31,11 @@
     "zip-webpack-plugin": "^4.0.3"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.5.1": true,
+    "duration-pattern@1.0.1": true,
+    "fsevents@2.3.3": true
   }
 }
