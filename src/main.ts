@@ -8,11 +8,14 @@ function startObserving(observer) {
 
 // Execute on Document Ready
 $(function () {
-	const observer = new MutationObserver(function () {
+	document.documentElement.dataset.garminPaceCalculator = 'loaded';
+	const initialize = (observer: MutationObserver) => {
 		if (!getIntervalsTable()?.length) return;
 		observer.disconnect();
 		$('div.page-navigation > button').on('click', () => setTimeout(() => startObserving(observer), 200));
 		initSummaryReport();
-	});
-	startObserving(observer);
+	};
+	const observer = new MutationObserver(() => initialize(observer));
+	initialize(observer);
+	if (!getIntervalsTable()?.length) startObserving(observer);
 });

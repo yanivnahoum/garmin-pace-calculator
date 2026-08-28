@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Garmin Intervals Fixture</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            font-family: sans-serif;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .IntervalsTable_selected__fixture {
+            background: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="tab-splits">
+        <table class="IntervalsTable_table__fixture">
+            <thead>
+                <tr>
+                    <th><span></span></th>
+                    <th><span>Interval</span></th>
+                    <th><span>Step Type</span></th>
+                    <th><span>Lap</span></th>
+                    <th><span>Time</span></th>
+                    <th><span>Cumulative Time</span></th>
+                    <th><span>Distance</span></th>
+                    <th><span>Avg Pace</span></th>
+                    <th><span>Avg Power</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="IntervalsTable_tableRow__fixture">
+                    <td></td>
+                    <td>1</td>
+                    <td>Run</td>
+                    <td>1</td>
+                    <td>5:00</td>
+                    <td>5:00</td>
+                    <td>1.00</td>
+                    <td>5:00</td>
+                    <td>200</td>
+                </tr>
+                <tr class="IntervalsTable_tableRow__fixture">
+                    <td></td>
+                    <td>2</td>
+                    <td>Run</td>
+                    <td>2</td>
+                    <td>5:00</td>
+                    <td>10:00</td>
+                    <td>1.00</td>
+                    <td>5:00</td>
+                    <td>300</td>
+                </tr>
+            </tbody>
+            <tfoot></tfoot>
+        </table>
+    </div>
+    <script>
+        document.querySelector('tbody').addEventListener('click', (event) => {
+            event.target.closest('tr')?.classList.toggle('IntervalsTable_selected__fixture');
+        });
+    </script>
+</body>
+
+</html>

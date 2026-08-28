@@ -151,4 +151,8 @@ temp/
 # Ignore all local history of files
 .history
 
+# Local Garmin browser session and live diagnostic artifacts
+.playwright/
+test-results/
+
 # End of https://www.gitignore.io/api/node,macos,visualstudiocode

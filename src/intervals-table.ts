@@ -23,11 +23,12 @@ function getData(): {
 	averagePower?: number | string;
 } {
 	console.log('Pace Calculator : getData');
-	const { Time: timeColumnIndex, Distance: distanceColumnIndex, 'Lap Power': lapPowerColumnIndex } = columnIndexes;
+	const { Time: timeColumnIndex, Distance: distanceColumnIndex } = columnIndexes;
+	const lapPowerColumnIndex = columnIndexes['Avg Power'] ?? columnIndexes['Lap Power'];
 
 	if (!table || !timeColumnIndex || !distanceColumnIndex) return {};
 
-	const activeLaps = isIntervalTable(table) ? table.find('tr[class*="Table_selected"]:not(:has(> td > svg)') as JQuery<HTMLTableRowElement>
+	const activeLaps = isIntervalTable(table) ? table.find('tr[class*="IntervalsTable_selected"], tr[class*="Table_selected"]').filter((_, row) => !$(row).find('> td > svg').length) as JQuery<HTMLTableRowElement>
 		: table.find('tr.active[class*="SortableTable_tableRow"]') as JQuery<HTMLTableRowElement>;
 
 	const data: ComputedIntervalValues[] = [];
@@ -149,6 +150,7 @@ function showSummary() {
 			case 'Avg Pace':
 				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Pace</span><br />${values.averagePace}</td>`));
 				break;
+			case 'Avg Power':
 			case 'Lap Power':
 				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Power</span><br />${values.averagePower}</td>`));
 				break;
