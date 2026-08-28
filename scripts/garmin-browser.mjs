@@ -127,20 +127,49 @@ async function validateFixture() {
         await page.goto(`${ACTIVITY_URL}?fixture=intervals`, { waitUntil: 'domcontentloaded' });
         await page.locator('html[data-garmin-pace-calculator="loaded"]').waitFor({ timeout: 10_000 });
         const rows = page.locator('#tab-splits tbody > tr');
-        await rows.nth(0).click();
-        await rows.nth(1).click();
         const summary = page.locator('#interval-summary');
-        await summary.waitFor({ state: 'visible', timeout: 10_000 });
-        await page.waitForFunction(
-            () => document.querySelector('#interval-summary')?.textContent?.includes('250.00'),
-            undefined,
-            { timeout: 10_000 },
+        const assertSummary = async (expectedValues) => {
+            await summary.waitFor({ state: 'visible', timeout: 10_000 });
+            try {
+                await page.waitForFunction(
+                    (expected) => {
+                        const summaryElement = document.querySelector('#interval-summary');
+                        const text = summaryElement instanceof HTMLElement ? summaryElement.innerText.replace(/\s+/g, ' ').trim() : undefined;
+                        return expected.every((value) => text?.includes(value));
+                    },
+                    expectedValues,
+                    { timeout: 10_000 },
+                );
+            } catch {
+                const observedText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
+                const rowClasses = await rows.evaluateAll((elements) => elements.map((element) => element.className));
+                throw new Error(`Expected ${JSON.stringify(expectedValues)}, received "${observedText}" with rows ${JSON.stringify(rowClasses)}`);
+            }
+            const summaryText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
+            if ((await page.locator('#interval-summary').count()) !== 1) {
+                throw new Error('Expected exactly one summary footer row.');
+            }
+            return summaryText;
+        };
+
+        await rows.nth(0).click();
+        const singleSummary = await assertSummary(['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
+
+        await rows.nth(1).click();
+        const combinedSummary = await assertSummary(['Total Time 0:10:00.0', 'Total Distance 2', 'Avg Power 250.00']);
+
+        await rows.nth(0).click();
+        const deselectedSummary = await assertSummary(['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 300.00']);
+        const selectedRows = await rows.evaluateAll((elements) =>
+            elements.map((element, index) => ({ index, selected: element.className.includes('IntervalsTable_selected') })).filter(({ selected }) => selected),
         );
-        const summaryText = (await summary.innerText()).replace(/\s+/g, ' ').trim();
-        for (const expected of ['Selected Summary', 'Avg Time 0:05:00.0', 'Total Time 0:10:00.0', 'Total Distance 2', 'Avg Pace 5:00', 'Avg Power 250.00']) {
-            if (!summaryText.includes(expected)) throw new Error(`Expected summary to contain "${expected}", received: ${summaryText}`);
+        if (selectedRows.length !== 1 || selectedRows[0].index !== 1) {
+            throw new Error('Expected only the second interval to remain selected.');
         }
-        console.log(`Fixture validation passed: ${summaryText}`);
+
+        console.log(`Single selection passed: ${singleSummary}`);
+        console.log(`Combined selection passed: ${combinedSummary}`);
+        console.log(`Deselection passed: ${deselectedSummary}`);
     } finally {
         await page.close();
         await browser.close();
