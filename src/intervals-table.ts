@@ -160,7 +160,7 @@ function showSummary() {
     const summaryRow = $(`<tr id="interval-summary"${activeLapsLength ? '' : ' class="summary-empty"'}></tr>`);
 
     const summaryTitleCell = $(
-        `<td class="selected-summary-title"><span class="summary-cell-layout"><span>${activeLapsLength ? 'Selected Summary' : 'Select&nbsp;some laps!'}</span><span class="summary-width-reference" aria-hidden="true">Selected Summary</span></span></td>`,
+        `<td class="selected-summary-title"><span class="summary-cell-layout"><span>${activeLapsLength ? 'Selected Summary' : 'Select laps!'}</span><span class="summary-width-reference" aria-hidden="true">Selected Summary</span></span></td>`,
     );
     const generateValueCell = (label: string, value: unknown, widthReference: string) =>
         $(
