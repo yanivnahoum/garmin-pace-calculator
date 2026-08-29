@@ -1,10 +1,9 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <title>Garmin Laps Fixture</title>
-    <style>
+	<meta charset="utf-8" />
+	<title>Garmin Laps Fixture</title>
+	<style>
         table {
             border-collapse: collapse;
             font-family: sans-serif;
@@ -19,63 +18,62 @@
         .SortableTable_selected__fixture {
             background: #ddd;
         }
-    </style>
+	</style>
 </head>
 
 <body>
-    <div class="Tabs_tabContent__fixture Tabs_tableContainer__fixture">
-        <table class="SortableTable_table__fixture">
-            <thead>
-                <tr>
-                    <th>
-                        <div><span>Laps</span></div>
-                    </th>
-                    <th>
-                        <div><span>Time</span></div>
-                    </th>
-                    <th>
-                        <div><span>Cumulative Time</span></div>
-                    </th>
-                    <th>
-                        <div><span>Distance</span></div>
-                    </th>
-                    <th>
-                        <div><span>Avg Pace</span></div>
-                    </th>
-                    <th>
-                        <div><span>Avg Power</span></div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="SortableTable_tableRow__fixture">
-                    <td>1</td>
-                    <td>5:00</td>
-                    <td>5:00</td>
-                    <td>1.00</td>
-                    <td>5:00</td>
-                    <td>200</td>
-                </tr>
-                <tr class="SortableTable_tableRow__fixture">
-                    <td>2</td>
-                    <td>5:00</td>
-                    <td>10:00</td>
-                    <td>1.00</td>
-                    <td>5:00</td>
-                    <td>300</td>
-                </tr>
-            </tbody>
-            <tfoot></tfoot>
-        </table>
-    </div>
-    <script>
-        document.querySelector('tbody').addEventListener('click', (event) => {
-            event.target
-                .closest('tr')
-                ?.querySelectorAll('td')
-                .forEach((cell) => cell.classList.toggle('SortableTable_selected__fixture'));
-        });
-    </script>
+<div class="Tabs_tabContent__fixture Tabs_tableContainer__fixture">
+	<table class="SortableTable_table__fixture">
+		<thead>
+		<tr>
+			<th>
+				<div><span>Laps</span></div>
+			</th>
+			<th>
+				<div><span>Time</span></div>
+			</th>
+			<th>
+				<div><span>Cumulative Time</span></div>
+			</th>
+			<th>
+				<div><span>Distance</span></div>
+			</th>
+			<th>
+				<div><span>Avg Pace</span></div>
+			</th>
+			<th>
+				<div><span>Avg Power</span></div>
+			</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr class="SortableTable_tableRow__fixture">
+			<td>1</td>
+			<td>5:00</td>
+			<td>5:00</td>
+			<td>1.00</td>
+			<td>5:00</td>
+			<td>200</td>
+		</tr>
+		<tr class="SortableTable_tableRow__fixture">
+			<td>2</td>
+			<td>5:00</td>
+			<td>10:00</td>
+			<td>1.00</td>
+			<td>5:00</td>
+			<td>300</td>
+		</tr>
+		</tbody>
+		<tfoot></tfoot>
+	</table>
+</div>
+<script>
+	document.querySelector('tbody').addEventListener('click', (event) => {
+		event.target
+			.closest('tr')
+			?.querySelectorAll('td')
+			.forEach((cell) => cell.classList.toggle('SortableTable_selected__fixture'));
+	});
+</script>
 </body>
-
 </html>

@@ -2,11 +2,11 @@
     "compilerOptions": {
         "noEmit": true,
         "target": "ES2022",
-        "lib": [
-            "DOM",
-            "DOM.Iterable",
-            "ES2022"
-        ],
+      "lib": [
+        "DOM",
+        "DOM.Iterable",
+        "ES2022"
+      ],
         "module": "ESNext",
         "moduleResolution": "bundler",
         "moduleDetection": "force",
@@ -19,15 +19,15 @@
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true,
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
+      "forceConsistentCasingInFileNames": true
     },
-    "include": [
-        "**/*.ts",
-        "webpack.config.js"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist",
-        "archive"
-    ]
+  "include": [
+    "**/*.ts",
+    "webpack.config.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "archive"
+  ]
 }
