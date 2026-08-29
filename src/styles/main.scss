@@ -1,73 +1,77 @@
 .garmin-pace-controls {
-    display: flex;
-    justify-content: flex-end;
-    padding: 8px 4px;
+	display: flex;
+	justify-content: flex-end;
+	padding: 8px 4px;
 }
 
 .garmin-pace-select-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    color: #2b2b2b;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: #2b2b2b;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
 
-    input {
-        width: 16px;
-        height: 16px;
-        margin: 0;
-        accent-color: #1976a3;
-        cursor: pointer;
-    }
+	input {
+		width: 16px;
+		height: 16px;
+		margin: 0;
+		accent-color: #1976a3;
+		cursor: pointer;
+	}
 }
 
 table[class^='IntervalsTable_table'],
 table[class^='SortableTable_table'] {
-    table-layout: auto;
+	table-layout: auto;
 
-    #interval-summary {
-        background: #eaf4f8;
-        border-top: 2px solid #1976a3;
+	#interval-summary {
+		background: #eaf4f8;
+		border-top: 2px solid #1976a3;
 
-        &.summary-empty .summary-value {
-            .summary-cell-content {
-                visibility: hidden;
-            }
-        }
+		&.summary-empty .summary-value {
+			.summary-cell-content {
+				visibility: hidden;
+			}
+		}
 
-        td {
-            box-sizing: border-box;
-            min-width: max-content;
-            padding: 10px 8px;
-            text-align: center;
-            vertical-align: middle;
-            white-space: nowrap;
+		td {
+			box-sizing: border-box;
+			min-width: max-content;
+			padding: 10px 8px;
+			text-align: center;
+			vertical-align: middle;
+			white-space: nowrap;
 
-            &.selected-summary-title {
-                font-weight: 600;
-            }
+			&.selected-summary-title {
+				font-weight: 600;
+			}
 
-            .summary-cell-layout {
-                display: grid;
-            }
+			&.summary-value {
+				font-weight: 600;
+			}
 
-            .summary-cell-layout > span {
-                grid-area: 1 / 1;
-            }
+			.summary-cell-layout {
+				display: grid;
+			}
 
-            .summary-width-reference {
-                visibility: hidden;
-            }
+			.summary-cell-layout>span {
+				grid-area: 1 / 1;
+			}
 
-            .summary-label {
-                display: inline-block;
-                margin-bottom: 2px;
-                color: #52636b;
-                font-size: 11px;
-                font-weight: 600;
-            }
-        }
-    }
+			.summary-width-reference {
+				visibility: hidden;
+			}
+
+			.summary-label {
+				display: inline-block;
+				margin-bottom: 2px;
+				color: #52636b;
+				font-size: 11px;
+				font-weight: 600;
+			}
+		}
+	}
 }

@@ -230,6 +230,9 @@ async function validateFixture() {
                         const cell = label.closest('td');
                         return cell && label.scrollWidth <= cell.clientWidth;
                     });
+                    const valuesAreBold = [...summary.querySelectorAll('.summary-value')].every(
+                        (cell) => Number.parseInt(getComputedStyle(cell).fontWeight, 10) >= 600,
+                    );
                     const labels = [...summary.querySelectorAll('td')].map((cell) => cell.querySelector('.summary-label')?.textContent?.trim() ?? '');
                     const paceIndex = labels.indexOf('Avg Pace');
                     const powerIndex = labels.indexOf('Avg Power');
@@ -238,6 +241,7 @@ async function validateFixture() {
                     const style = getComputedStyle(summary);
                     return {
                         labelsFit,
+                        valuesAreBold,
                         calculatedValuesAreContiguous: powerIndex < 0 || powerIndex === paceIndex + 1,
                         spansFullTableWidth: summaryColumnCount === tableColumnCount,
                         backgroundColor: style.backgroundColor,
@@ -245,6 +249,7 @@ async function validateFixture() {
                 });
                 if (
                     !summaryPresentation.labelsFit ||
+                    !summaryPresentation.valuesAreBold ||
                     !summaryPresentation.calculatedValuesAreContiguous ||
                     !summaryPresentation.spansFullTableWidth ||
                     summaryPresentation.backgroundColor === 'rgba(0, 0, 0, 0)'
@@ -253,7 +258,7 @@ async function validateFixture() {
                 }
 
                 await selectAll.uncheck();
-                await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.replace(/\s+/g, ' ').includes('Select some laps!'));
+                await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.replace(/\s+/g, ' ').includes('Select laps!'));
                 if ((await selectedRowCount(rows)) !== 0 || (await selectAll.isChecked())) {
                     throw new Error('Expected select-all to deselect every row.');
                 }
@@ -282,7 +287,7 @@ async function validateFixture() {
                 });
                 await page.locator('#interval-summary').waitFor({ state: 'visible', timeout: 10_000 });
                 await page.locator('.garmin-pace-select-all input').waitFor({ state: 'visible', timeout: 10_000 });
-                await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.replace(/\s+/g, ' ').includes('Select some laps!'));
+                await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.replace(/\s+/g, ' ').includes('Select laps!'));
                 await rows.nth(0).click();
                 const navigationSummary = await assertSummary(page, rows, ['Total Time 0:06:00.0', 'Total Distance 1.5', 'Avg Power 240.00']);
 
