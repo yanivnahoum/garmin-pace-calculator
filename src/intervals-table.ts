@@ -154,49 +154,47 @@ function showSummary() {
 	tableFooter.find('#interval-summary').remove();
 	updateSelectAllControl();
 
-	const summaryRow = $(`<tr id="interval-summary"></tr>`);
+	const summaryRow = $(`<tr id="interval-summary"${activeLapsLength ? '' : ' class="summary-empty"'}></tr>`);
 
-	const generateEmptyCell = () => $('<td class="summary-value"></td>');
-
-	const summaryTitleCell = $(`<td class="selected-summary-title">${activeLapsLength ? 'Selected Summary' : 'Select&nbsp;some laps!'}</td>`);
-
-	if (!activeLapsLength) {
-		summaryRow.append(generateEmptyCell());
-		summaryRow.append(summaryTitleCell);
-		summaryRow.append($('<td colspan="100%"></td>'));
-		tableFooter.append(summaryRow);
-		return;
-	}
+	const summaryTitleCell = $(
+		`<td class="selected-summary-title"><span class="summary-cell-layout"><span>${activeLapsLength ? 'Selected Summary' : 'Select&nbsp;some laps!'}</span><span class="summary-width-reference" aria-hidden="true">Selected Summary</span></span></td>`,
+	);
+	const generateValueCell = (label: string, value: unknown, widthReference: string) =>
+		$(
+			`<td class="summary-value"><span class="summary-cell-layout"><span class="summary-cell-content"><span class="summary-label">${label}</span><br />${value}</span><span class="summary-width-reference" aria-hidden="true">${widthReference}</span></span></td>`,
+		);
 
 	const sortedColumns = [...Object.entries(columnIndexes)].sort(([_a, a_value], [_b, b_value]) => a_value - b_value);
 
 	sortedColumns.forEach(([columnName, _]) => {
 		switch (columnName.trim()) {
 			case 'Interval':
-			case 'Lap':
+				summaryRow.append($('<td></td>'));
+				summaryRow.append(summaryTitleCell);
+				break;
 			case 'Laps':
 				summaryRow.append(summaryTitleCell);
 				break;
 			case 'Time':
-				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Time</span><br />${values.averageTime}</td>`));
+				summaryRow.append(generateValueCell('Avg Time', values.averageTime, 'Avg Time 00:00:00.0'));
 				break;
 			case 'Cumulative Time':
-				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Total Time</span><br />${values.cumulativeTime}</td>`));
+				summaryRow.append(generateValueCell('Total Time', values.cumulativeTime, 'Total Time 00:00:00.0'));
 				break;
 			case 'Distance':
-				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Total Distance</span><br />${values.totalDistance}</td>`));
+				summaryRow.append(generateValueCell('Total Distance', values.totalDistance, 'Total Distance 000.00'));
 				break;
 			case 'Avg Pace':
-				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Pace</span><br />${values.averagePace}</td>`));
+				summaryRow.append(generateValueCell('Avg Pace', values.averagePace, 'Avg Pace 00:00.0'));
 				break;
 			case 'Avg Power':
-				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Power</span><br />${values.averagePower}</td>`));
-				break;
-			default:
-				summaryRow.append(generateEmptyCell());
+				summaryRow.append(generateValueCell('Avg Power', values.averagePower, 'Avg Power 0000.00'));
 				break;
 		}
 	});
+
+	const remainingColumns = table.find('> thead > tr').first().children('th').length - summaryRow.children('td').length;
+	if (remainingColumns > 0) summaryRow.append($(`<td colspan="${remainingColumns}"></td>`));
 
 	tableFooter.append(summaryRow);
 }

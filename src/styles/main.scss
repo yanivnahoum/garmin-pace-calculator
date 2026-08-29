@@ -31,6 +31,12 @@ table[class^='SortableTable_table'] {
 		background: #eaf4f8;
 		border-top: 2px solid #1976a3;
 
+		&.summary-empty .summary-value {
+			.summary-cell-content {
+				visibility: hidden;
+			}
+		}
+
 		td {
 			box-sizing: border-box;
 			min-width: max-content;
@@ -41,6 +47,18 @@ table[class^='SortableTable_table'] {
 
 			&.selected-summary-title {
 				font-weight: 600;
+			}
+
+			.summary-cell-layout {
+				display: grid;
+			}
+
+			.summary-cell-layout>span {
+				grid-area: 1 / 1;
+			}
+
+			.summary-width-reference {
+				visibility: hidden;
 			}
 
 			.summary-label {

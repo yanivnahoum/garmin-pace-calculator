@@ -192,9 +192,20 @@ async function validateFixture() {
                 await page.goto(fixtureUrl, { waitUntil: 'domcontentloaded' });
                 await page.locator('html[data-garmin-pace-calculator="loaded"]').waitFor({ timeout: 10_000 });
                 const rows = intervalsTable(page).locator('tbody > tr');
+                const emptyLayout = await page.evaluate(() => ({
+                    tableWidth: document.querySelector('table')?.getBoundingClientRect().width,
+                    titleWidth: document.querySelector('#interval-summary .selected-summary-title')?.getBoundingClientRect().width,
+                }));
 
                 await rows.nth(0).click();
                 const singleSummary = await assertSummary(page, rows, ['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
+                const selectedLayout = await page.evaluate(() => ({
+                    tableWidth: document.querySelector('table')?.getBoundingClientRect().width,
+                    titleWidth: document.querySelector('#interval-summary .selected-summary-title')?.getBoundingClientRect().width,
+                }));
+                if (emptyLayout.tableWidth !== selectedLayout.tableWidth || emptyLayout.titleWidth !== selectedLayout.titleWidth) {
+                    throw new Error(`Expected selection not to resize the summary table: ${JSON.stringify({ emptyLayout, selectedLayout })}`);
+                }
 
                 await rows.nth(1).click();
                 const combinedSummary = await assertSummary(page, rows, ['Total Time 0:10:00.0', 'Total Distance 2', 'Avg Power 250.00']);
@@ -219,10 +230,25 @@ async function validateFixture() {
                         const cell = label.closest('td');
                         return cell && label.scrollWidth <= cell.clientWidth;
                     });
+                    const labels = [...summary.querySelectorAll('td')].map((cell) => cell.querySelector('.summary-label')?.textContent?.trim() ?? '');
+                    const paceIndex = labels.indexOf('Avg Pace');
+                    const powerIndex = labels.indexOf('Avg Power');
+                    const summaryColumnCount = [...summary.cells].reduce((count, cell) => count + cell.colSpan, 0);
+                    const tableColumnCount = summary.closest('table')?.querySelectorAll('thead > tr:first-child > th').length;
                     const style = getComputedStyle(summary);
-                    return { labelsFit, backgroundColor: style.backgroundColor };
+                    return {
+                        labelsFit,
+                        calculatedValuesAreContiguous: powerIndex < 0 || powerIndex === paceIndex + 1,
+                        spansFullTableWidth: summaryColumnCount === tableColumnCount,
+                        backgroundColor: style.backgroundColor,
+                    };
                 });
-                if (!summaryPresentation.labelsFit || summaryPresentation.backgroundColor === 'rgba(0, 0, 0, 0)') {
+                if (
+                    !summaryPresentation.labelsFit ||
+                    !summaryPresentation.calculatedValuesAreContiguous ||
+                    !summaryPresentation.spansFullTableWidth ||
+                    summaryPresentation.backgroundColor === 'rgba(0, 0, 0, 0)'
+                ) {
                     throw new Error(`Expected a colored summary row with labels contained by their cells: ${JSON.stringify(summaryPresentation)}`);
                 }
 
