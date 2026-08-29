@@ -19,6 +19,18 @@ When the user selects laps, it computes average time, total time, total distance
 There is no unit-test or lint script. Browser validation uses Playwright attached over CDP to native Chrome because automated browser login is rejected by
 Cloudflare. Formatting is Prettier only (`.prettierrc`).
 
+## Canonical Garmin examples
+
+The two activity variants used for development are deliberately preserved in git. Future agents should use both when changing Garmin selectors, summary layout,
+or selection behavior:
+
+- **Intervals workout:** `https://connect.garmin.com/app/activity/24144016703`; its tracked DOM fixture is `tests/fixtures/intervals-table.html`.
+- **Plain Laps activity:** `https://connect.garmin.com/app/activity/23796253664`; its tracked DOM fixture is `tests/fixtures/laps-table.html`.
+
+Run `npm run garmin:fixture` for deterministic checks against both tracked fixtures. After DOM-sensitive changes, also run
+`npm run garmin:diagnose -- <activity-url>` against each live URL while the authenticated diagnostic Chrome is running. Live diagnostic output under
+`test-results/` is intentionally ignored and is not a substitute for updating the corresponding tracked fixture when Garmin's DOM changes.
+
 ## Architecture
 
 Single content script (`src/main.ts` → bundled as `dist/main.js`) injected into Garmin Connect. `assets/manifest.json` and `assets/icons/` are copied verbatim
