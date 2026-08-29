@@ -21,15 +21,17 @@ function getSelectableRows(): JQuery<HTMLTableRowElement> {
 
 function getSelectedRows(): JQuery<HTMLTableRowElement> {
 	if (!table) return $() as JQuery<HTMLTableRowElement>;
-	return isIntervalTable(table)
-		? (table
-			.find('tr[class*="IntervalsTable_selected"], tr[class*="Table_selected"]')
-			.filter((_, row) => !$(row).find('> td > svg').length) as JQuery<HTMLTableRowElement>)
-		: (table.find('tr[class*="SortableTable_tableRow"]:has(> td[class*="SortableTable_selected"])') as JQuery<HTMLTableRowElement>);
+	const intervalTable = isIntervalTable(table);
+	return getSelectableRows().filter((_, row) =>
+		intervalTable
+			? $(row).is('[class*="IntervalsTable_selected"], [class*="Table_selected"]')
+			: $(row).find('> td[class*="SortableTable_selected"]').length > 0,
+	) as JQuery<HTMLTableRowElement>;
 }
 
 function updateSelectAllControl() {
-	const checkbox = $('.garmin-pace-select-all input');
+	if (!table) return;
+	const checkbox = table.prev('.garmin-pace-controls').find('.garmin-pace-select-all input');
 	const selectableCount = getSelectableRows().length;
 	const selectedCount = getSelectedRows().length;
 	checkbox.prop('checked', selectableCount > 0 && selectedCount === selectableCount);
@@ -42,9 +44,10 @@ function addSelectAllControl() {
 	const control = $('<div class="garmin-pace-controls"><label class="garmin-pace-select-all"><input type="checkbox" /><span>Select all</span></label></div>');
 	control.find('input').on('change', (event) => {
 		const shouldSelect = (event.currentTarget as HTMLInputElement).checked;
+		const selectedRows = new Set(getSelectedRows().get());
+		const intervalTable = isIntervalTable(table!);
 		getSelectableRows().each((_, row) => {
-			const isSelected = getSelectedRows().is(row);
-			if (isSelected !== shouldSelect) (isIntervalTable(table!) ? row : row.cells[0])?.click();
+			if (selectedRows.has(row) !== shouldSelect) (intervalTable ? row : row.cells[0])?.click();
 		});
 		setTimeout(showSummary, 0);
 	});
@@ -63,7 +66,7 @@ function getData(): {
 	const { Time: timeColumnIndex, Distance: distanceColumnIndex } = columnIndexes;
 	const lapPowerColumnIndex = columnIndexes['Avg Power'];
 
-	if (!table || !timeColumnIndex || !distanceColumnIndex) return {};
+	if (!table || timeColumnIndex === undefined || distanceColumnIndex === undefined) return {};
 
 	const activeLaps = getSelectedRows();
 
@@ -80,7 +83,7 @@ function getData(): {
 		const cellsData: ComputedIntervalValues = {
 			time: parseTime(cells[timeColumnIndex]?.innerText),
 			distance: Number(cells[distanceColumnIndex]?.innerText),
-			...(lapPowerColumnIndex ? { lapPower: Number(cells[lapPowerColumnIndex]?.innerText) } : {}),
+			...(lapPowerColumnIndex !== undefined ? { lapPower: Number(cells[lapPowerColumnIndex]?.innerText) } : {}),
 		};
 
 		data.push(cellsData);

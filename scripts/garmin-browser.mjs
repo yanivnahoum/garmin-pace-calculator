@@ -262,25 +262,29 @@ async function validateFixture() {
                     const currentTable = document.querySelector('table');
                     if (!(currentTable instanceof HTMLTableElement)) throw new Error('Fixture table is missing.');
 
-                    const replacementTable = currentTable.cloneNode(true);
-                    if (!(replacementTable instanceof HTMLTableElement)) throw new Error('Could not clone fixture table.');
-                    replacementTable.querySelector('tfoot')?.replaceChildren();
-                    document.querySelector('.garmin-pace-controls')?.remove();
-                    currentTable.replaceWith(replacementTable);
+                    const headers = [...currentTable.querySelectorAll('thead th')].map((header) => header.textContent?.trim());
+                    const firstRow = currentTable.tBodies[0]?.rows[0];
+                    if (!firstRow) throw new Error('Fixture table row is missing.');
+                    const setValue = (header, value) => {
+                        const index = headers.indexOf(header);
+                        if (index < 0 || !firstRow.cells[index]) throw new Error(`Fixture column ${header} is missing.`);
+                        firstRow.cells[index].textContent = value;
+                    };
+                    setValue('Time', '6:00');
+                    setValue('Cumulative Time', '6:00');
+                    setValue('Distance', '1.50');
+                    setValue('Avg Pace', '4:00');
+                    setValue('Avg Power', '240');
 
-                    replacementTable.tBodies[0]?.addEventListener('click', (event) => {
-                        const row = event.target instanceof Element ? event.target.closest('tr') : null;
-                        if (!row) return;
-                        if (replacementTable.className.startsWith('IntervalsTable_table')) {
-                            row.classList.toggle('IntervalsTable_selected__fixture');
-                        } else {
-                            row.querySelectorAll('td').forEach((cell) => cell.classList.toggle('SortableTable_selected__fixture'));
-                        }
-                    });
+                    document.querySelector('.garmin-pace-controls')?.remove();
+                    currentTable.querySelector('tfoot')?.replaceChildren();
+                    history.pushState({}, '', `${location.pathname}?activity=navigation-test`);
                 });
                 await page.locator('#interval-summary').waitFor({ state: 'visible', timeout: 10_000 });
+                await page.locator('.garmin-pace-select-all input').waitFor({ state: 'visible', timeout: 10_000 });
+                await page.waitForFunction(() => document.querySelector('#interval-summary')?.textContent?.replace(/\s+/g, ' ').includes('Select some laps!'));
                 await rows.nth(0).click();
-                const navigationSummary = await assertSummary(page, rows, ['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
+                const navigationSummary = await assertSummary(page, rows, ['Total Time 0:06:00.0', 'Total Distance 1.5', 'Avg Power 240.00']);
 
                 console.log(`${fixtureDefinition.name} single selection passed: ${singleSummary}`);
                 console.log(`${fixtureDefinition.name} combined selection passed: ${combinedSummary}`);
