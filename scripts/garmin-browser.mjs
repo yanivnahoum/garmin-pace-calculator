@@ -258,11 +258,36 @@ async function validateFixture() {
                     throw new Error('Expected select-all to deselect every row.');
                 }
 
+                await page.evaluate(() => {
+                    const currentTable = document.querySelector('table');
+                    if (!(currentTable instanceof HTMLTableElement)) throw new Error('Fixture table is missing.');
+
+                    const replacementTable = currentTable.cloneNode(true);
+                    if (!(replacementTable instanceof HTMLTableElement)) throw new Error('Could not clone fixture table.');
+                    replacementTable.querySelector('tfoot')?.replaceChildren();
+                    document.querySelector('.garmin-pace-controls')?.remove();
+                    currentTable.replaceWith(replacementTable);
+
+                    replacementTable.tBodies[0]?.addEventListener('click', (event) => {
+                        const row = event.target instanceof Element ? event.target.closest('tr') : null;
+                        if (!row) return;
+                        if (replacementTable.className.startsWith('IntervalsTable_table')) {
+                            row.classList.toggle('IntervalsTable_selected__fixture');
+                        } else {
+                            row.querySelectorAll('td').forEach((cell) => cell.classList.toggle('SortableTable_selected__fixture'));
+                        }
+                    });
+                });
+                await page.locator('#interval-summary').waitFor({ state: 'visible', timeout: 10_000 });
+                await rows.nth(0).click();
+                const navigationSummary = await assertSummary(page, rows, ['Total Time 0:05:00.0', 'Total Distance 1', 'Avg Power 200.00']);
+
                 console.log(`${fixtureDefinition.name} single selection passed: ${singleSummary}`);
                 console.log(`${fixtureDefinition.name} combined selection passed: ${combinedSummary}`);
                 console.log(`${fixtureDefinition.name} deselection passed: ${deselectedSummary}`);
                 console.log(`${fixtureDefinition.name} select all passed: ${selectAllSummary}`);
                 console.log(`${fixtureDefinition.name} deselect all and summary presentation passed.`);
+                console.log(`${fixtureDefinition.name} activity navigation passed: ${navigationSummary}`);
             } finally {
                 await page.close();
             }
