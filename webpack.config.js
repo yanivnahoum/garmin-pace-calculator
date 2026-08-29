@@ -21,6 +21,7 @@ module.exports = (env) => {
 			rules: [
 				{
 					test: /\.[tj]sx?$/,
+					exclude: /node_modules/,
 					use: {
 						loader: 'ts-loader',
 						options: {
