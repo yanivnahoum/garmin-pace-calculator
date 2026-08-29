@@ -44,7 +44,7 @@ function getData(): {
 		const cellsData: ComputedIntervalValues = {
 			time: parseTime(cells[timeColumnIndex]?.innerText),
 			distance: Number(cells[distanceColumnIndex]?.innerText),
-			lapPower: lapPowerColumnIndex ? Number(cells[lapPowerColumnIndex]?.innerText) : undefined,
+			...(lapPowerColumnIndex ? { lapPower: Number(cells[lapPowerColumnIndex]?.innerText) } : {}),
 		};
 
 		data.push(cellsData);

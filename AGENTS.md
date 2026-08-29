@@ -9,7 +9,7 @@ Chrome extension (Manifest V3) that injects a summary footer into the Laps/Inter
 - `npm run build` — production webpack build; emits `dist/` and `dist/package/garmin-splits-calculator.zip` (upload to Chrome Web Store).
 - `npm run build:dev` — development build with source maps.
 - `npm run watch` — webpack watch mode; load `dist/` as an unpacked extension in `chrome://extensions` and reload after each rebuild.
-- Node 22 is required (enforced via `engines` in `package.json`).
+- Node 24 is required (enforced via `engines` in `package.json`).
 
 There is no test runner wired up despite `jest` being a devDependency, and there is no lint script — formatting is Prettier only (`.prettierrc`).
 

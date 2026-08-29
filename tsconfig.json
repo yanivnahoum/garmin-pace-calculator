@@ -1,36 +1,33 @@
 {
     "compilerOptions": {
         "noEmit": true,
-        "target": "es2021",
-        "module": "esnext",
-        "moduleResolution": "node",
-        "isolatedModules": true,
-        "resolveJsonModule": true,
-        "sourceMap": false,
-        "allowJs": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "noImplicitAny": false,
+        "target": "ES2022",
         "lib": [
-            "dom",
-            "dom.iterable",
-            "esnext"
+            "DOM",
+            "DOM.Iterable",
+            "ES2022"
         ],
-        "typeRoots": [
-            "node_modules/@types"
-        ],
-        "types": [
-            "node"
-        ],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "moduleDetection": "force",
+        "allowJs": true,
+        "checkJs": false,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
         "strict": true,
-        "forceConsistentCasingInFileNames": false,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
     },
     "include": [
-        "**/*.ts"
-, "webpack.config.js"    ],
+        "**/*.ts",
+        "webpack.config.js"
+    ],
     "exclude": [
         "node_modules",
         "dist",
-        "arhcive"
+        "archive"
     ]
 }

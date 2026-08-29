@@ -2,7 +2,7 @@ import $ from 'jquery';
 import { getIntervalsTable, initSummaryReport } from './intervals-table';
 import './styles/main.scss';
 
-function startObserving(observer) {
+function startObserving(observer: MutationObserver) {
 	observer.observe(document.body, { childList: true, subtree: true });
 }
 
