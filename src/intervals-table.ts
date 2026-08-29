@@ -8,11 +8,48 @@ const TIME_FORMAT = 'H:mm:ss.SS';
 const PACE_FORMAT = 'm:ss.S';
 
 function getIntervalsTable(): JQuery<HTMLTableElement> {
-	return $('table[class^="IntervalsTable_table"], #tab-splits table').first() as JQuery<HTMLTableElement>;
+	return $('table[class^="IntervalsTable_table"], table[class^="SortableTable_table"]').first() as JQuery<HTMLTableElement>;
 }
 
 let table: JQuery<HTMLTableElement> | undefined;
 let columnIndexes: { [key: string]: number } = {};
+
+function getSelectableRows(): JQuery<HTMLTableRowElement> {
+	if (!table) return $() as JQuery<HTMLTableRowElement>;
+	return table.find('> tbody > tr').filter((_, row) => !$(row).find('> td > svg').length) as JQuery<HTMLTableRowElement>;
+}
+
+function getSelectedRows(): JQuery<HTMLTableRowElement> {
+	if (!table) return $() as JQuery<HTMLTableRowElement>;
+	return isIntervalTable(table)
+		? (table
+			.find('tr[class*="IntervalsTable_selected"], tr[class*="Table_selected"]')
+			.filter((_, row) => !$(row).find('> td > svg').length) as JQuery<HTMLTableRowElement>)
+		: (table.find('tr[class*="SortableTable_tableRow"]:has(> td[class*="SortableTable_selected"])') as JQuery<HTMLTableRowElement>);
+}
+
+function updateSelectAllControl() {
+	const checkbox = $('.garmin-pace-select-all input');
+	const selectableCount = getSelectableRows().length;
+	const selectedCount = getSelectedRows().length;
+	checkbox.prop('checked', selectableCount > 0 && selectedCount === selectableCount);
+	checkbox.prop('indeterminate', selectedCount > 0 && selectedCount < selectableCount);
+}
+
+function addSelectAllControl() {
+	if (!table || table.prev('.garmin-pace-controls').length) return;
+
+	const control = $('<div class="garmin-pace-controls"><label class="garmin-pace-select-all"><input type="checkbox" /><span>Select all</span></label></div>');
+	control.find('input').on('change', (event) => {
+		const shouldSelect = (event.currentTarget as HTMLInputElement).checked;
+		getSelectableRows().each((_, row) => {
+			const isSelected = getSelectedRows().is(row);
+			if (isSelected !== shouldSelect) (isIntervalTable(table!) ? row : row.cells[0])?.click();
+		});
+		setTimeout(showSummary, 0);
+	});
+	table.before(control);
+}
 
 function getData(): {
 	activeLapsLength?: number;
@@ -24,12 +61,11 @@ function getData(): {
 } {
 	console.log('Pace Calculator : getData');
 	const { Time: timeColumnIndex, Distance: distanceColumnIndex } = columnIndexes;
-	const lapPowerColumnIndex = columnIndexes['Avg Power'] ?? columnIndexes['Lap Power'];
+	const lapPowerColumnIndex = columnIndexes['Avg Power'];
 
 	if (!table || !timeColumnIndex || !distanceColumnIndex) return {};
 
-	const activeLaps = isIntervalTable(table) ? table.find('tr[class*="IntervalsTable_selected"], tr[class*="Table_selected"]').filter((_, row) => !$(row).find('> td > svg').length) as JQuery<HTMLTableRowElement>
-		: table.find('tr.active[class*="SortableTable_tableRow"]') as JQuery<HTMLTableRowElement>;
+	const activeLaps = getSelectedRows();
 
 	const data: ComputedIntervalValues[] = [];
 
@@ -116,6 +152,7 @@ function showSummary() {
 
 	const tableFooter = table.find('> tfoot');
 	tableFooter.find('#interval-summary').remove();
+	updateSelectAllControl();
 
 	const summaryRow = $(`<tr id="interval-summary"></tr>`);
 
@@ -136,6 +173,8 @@ function showSummary() {
 	sortedColumns.forEach(([columnName, _]) => {
 		switch (columnName.trim()) {
 			case 'Interval':
+			case 'Lap':
+			case 'Laps':
 				summaryRow.append(summaryTitleCell);
 				break;
 			case 'Time':
@@ -151,7 +190,6 @@ function showSummary() {
 				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Pace</span><br />${values.averagePace}</td>`));
 				break;
 			case 'Avg Power':
-			case 'Lap Power':
 				summaryRow.append($(`<td class="summary-value"><span class="summary-label">Avg Power</span><br />${values.averagePower}</td>`));
 				break;
 			default:
@@ -183,7 +221,12 @@ function initSummaryReport() {
 		columnIndexes[columnName] = idx;
 	});
 
-	table.find('> tbody').on('click', () => setTimeout(showSummary, 0));
+	addSelectAllControl();
+	table
+		.find('> tbody')
+		.off('click.garminPaceCalculator')
+		.on('click.garminPaceCalculator', () => setTimeout(showSummary, 0));
+	showSummary();
 }
 
 export { getIntervalsTable, initSummaryReport };
