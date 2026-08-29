@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8" />
 	<title>Garmin Laps Fixture</title>
@@ -22,27 +23,40 @@
 </head>
 
 <body>
+<div role="tablist">
+	<button role="tab" aria-selected="true">Laps</button>
+</div>
 <div class="Tabs_tabContent__fixture Tabs_tableContainer__fixture">
 	<table class="SortableTable_table__fixture">
 		<thead>
 		<tr>
-			<th>
-				<div><span>Laps</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Laps</span></div>
 			</th>
-			<th>
-				<div><span>Time</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Time</span></div>
 			</th>
-			<th>
-				<div><span>Cumulative Time</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Cumulative Time</span></div>
 			</th>
-			<th>
-				<div><span>Distance</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture">
+					<span>Distance</span><br /><span>km</span></div>
 			</th>
-			<th>
-				<div><span>Avg Pace</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Avg
+								Pace</span><br /><span>min/km</span></div>
 			</th>
-			<th>
-				<div><span>Avg Power</span></div>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Avg
+								HR</span><br /><span>bpm</span></div>
+			</th>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Avg
+								Power</span><br /><span>W</span></div>
+			</th>
+			<th class="SortableTable_headerItem__fixture">
+				<div class="ActivitySplits_tableHeaderContainer__fixture"><span>Calories</span></div>
 			</th>
 		</tr>
 		</thead>
@@ -53,7 +67,9 @@
 			<td>5:00</td>
 			<td>1.00</td>
 			<td>5:00</td>
+			<td>150</td>
 			<td>200</td>
+			<td>75</td>
 		</tr>
 		<tr class="SortableTable_tableRow__fixture">
 			<td>2</td>
@@ -61,7 +77,9 @@
 			<td>10:00</td>
 			<td>1.00</td>
 			<td>5:00</td>
+			<td>160</td>
 			<td>300</td>
+			<td>80</td>
 		</tr>
 		</tbody>
 		<tfoot></tfoot>
@@ -76,4 +94,5 @@
 	});
 </script>
 </body>
+
 </html>
